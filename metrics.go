@@ -1,14 +1,20 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
-	"strconv"
 )
 
 func (cfg *apiConfig) handlerMetrics(w http.ResponseWriter, r *http.Request) {
-	w.Header().Add("Content-Type", "text/plain; charset=utf-8")
+	w.Header().Add("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
-	hits := strconv.Itoa(int(cfg.fileserverHits.Load()))
-	hitString := "Hits: " + hits
+	hits := cfg.fileserverHits.Load()
+	hitString := fmt.Sprintf(
+		`<html>
+  <body>
+    <h1>Welcome, Chirpy Admin</h1>
+    <p>Chirpy has been visited %d times!</p>
+  </body>
+</html>`, hits)
 	w.Write([]byte(hitString))
 }
