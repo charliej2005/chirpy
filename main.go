@@ -2,15 +2,12 @@ package main
 
 import (
 	"database/sql"
-	"encoding/json"
 	"log"
 	"net/http"
 	"os"
 	"sync/atomic"
-	"time"
 
 	"github.com/charliej2005/chripy/internal/database"
-	"github.com/google/uuid"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 )
@@ -38,8 +35,8 @@ func main() {
 	mux := http.NewServeMux()
 	mux.Handle("/app/", fileSever)
 	mux.HandleFunc("GET /api/healthz", handlerReadiness)
-	mux.HandleFunc("POST /api/validate_chirp", handlerChirpsValidate)
-	mux.HandleFunc("POST /api/users", apiCfg.handlerUsers)
+	mux.HandleFunc("POST /api/users", apiCfg.handlerUsersCreate)
+	mux.HandleFunc("POST /api/chirps", apiCfg.handlerChirpsCreate)
 	mux.HandleFunc("GET /admin/metrics", apiCfg.handlerMetrics)
 	mux.HandleFunc("POST /admin/reset", apiCfg.handlerReset)
 
@@ -55,43 +52,4 @@ type apiConfig struct {
 	db             *database.Queries
 	platform       string
 	fileserverHits atomic.Int32
-}
-
-type User struct {
-	ID        uuid.UUID `json:"id"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-	Email     string    `json:"email"`
-}
-
-func handlerChirpsValidate(w http.ResponseWriter, r *http.Request) {
-	type parameters struct {
-		Body string `json:"body"`
-	}
-	type returnVals struct {
-		CleanedBody string `json:"cleaned_body"`
-	}
-
-	decoder := json.NewDecoder(r.Body)
-	params := parameters{}
-	err := decoder.Decode(&params)
-	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Couldn't decode parameters", err)
-		return
-	}
-
-	const maxChirpLength = 140
-	if len([]rune(params.Body)) > maxChirpLength {
-		respondWithError(w, http.StatusBadRequest, "Chirp is too long", nil)
-		return
-	}
-
-	blocked := make(map[string]struct{})
-	blocked["kerfuffle"] = struct{}{}
-	blocked["sharbert"] = struct{}{}
-	blocked["fornax"] = struct{}{}
-
-	respondWithJSON(w, http.StatusOK, returnVals{
-		CleanedBody: cleanInput(params.Body, blocked),
-	})
 }
