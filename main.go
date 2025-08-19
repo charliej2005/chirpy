@@ -18,6 +18,7 @@ import (
 func main() {
 	godotenv.Load()
 	dbURL := os.Getenv("DB_URL")
+	platform := os.Getenv("PLATFORM")
 	db, err := sql.Open("postgres", dbURL)
 	if err != nil {
 		log.Fatal("Failed to connect to database\n")
@@ -29,6 +30,7 @@ func main() {
 	const port = "8080"
 	apiCfg := apiConfig{
 		db:             dbQueries,
+		platform:       platform,
 		fileserverHits: atomic.Int32{},
 	}
 	fileSever := apiCfg.middlewareMetricsInc(http.StripPrefix("/app", http.FileServer(http.Dir(filepathRoot))))
@@ -39,7 +41,7 @@ func main() {
 	mux.HandleFunc("POST /api/validate_chirp", handlerChirpsValidate)
 	mux.HandleFunc("POST /api/users", apiCfg.handlerUsers)
 	mux.HandleFunc("GET /admin/metrics", apiCfg.handlerMetrics)
-	mux.HandleFunc("POST /admin/reset", apiCfg.handlerResetMetrics)
+	mux.HandleFunc("POST /admin/reset", apiCfg.handlerReset)
 
 	srv := &http.Server{
 		Addr:    ":" + port,
@@ -51,6 +53,7 @@ func main() {
 
 type apiConfig struct {
 	db             *database.Queries
+	platform       string
 	fileserverHits atomic.Int32
 }
 
