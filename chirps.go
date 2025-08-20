@@ -19,6 +19,27 @@ type Chirp struct {
 	Body      string    `json:"body"`
 }
 
+func (cfg *apiConfig) handlerChirps(w http.ResponseWriter, r *http.Request) {
+	resp, err := cfg.db.GetAllChirps(r.Context())
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Couldn't retrieve chirps", err)
+	}
+
+	chirps := []Chirp{}
+	for _, entry := range resp {
+		chirp := Chirp{
+			ID:        entry.ID,
+			CreatedAt: entry.CreatedAt,
+			UpdatedAt: entry.UpdatedAt,
+			Body:      entry.Body,
+			UserID:    entry.UserID,
+		}
+		chirps = append(chirps, chirp)
+	}
+
+	respondWithJSON(w, http.StatusOK, chirps)
+}
+
 func (cfg *apiConfig) handlerChirpsCreate(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
 		Body   string    `json:"body"`
