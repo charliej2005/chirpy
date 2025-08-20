@@ -34,11 +34,17 @@ func main() {
 
 	mux := http.NewServeMux()
 	mux.Handle("/app/", fileSever)
-	mux.HandleFunc("GET /api/healthz", handlerReadiness)
-	mux.HandleFunc("GET /api/chirps", apiCfg.handlerChirps)
+
 	mux.HandleFunc("POST /api/users", apiCfg.handlerUsersCreate)
+
+	mux.HandleFunc("GET /api/chirps", apiCfg.handlerChirps)
+	mux.HandleFunc("GET /api/chirps/{chirpID}", apiCfg.handlerChirp)
 	mux.HandleFunc("POST /api/chirps", apiCfg.handlerChirpsCreate)
+
+	mux.HandleFunc("GET /api/healthz", handlerReadiness)
+
 	mux.HandleFunc("GET /admin/metrics", apiCfg.handlerMetrics)
+
 	mux.HandleFunc("POST /admin/reset", apiCfg.handlerReset)
 
 	srv := &http.Server{

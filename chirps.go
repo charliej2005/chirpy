@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -23,6 +24,7 @@ func (cfg *apiConfig) handlerChirps(w http.ResponseWriter, r *http.Request) {
 	resp, err := cfg.db.GetAllChirps(r.Context())
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Couldn't retrieve chirps", err)
+		return
 	}
 
 	chirps := []Chirp{}
@@ -38,6 +40,31 @@ func (cfg *apiConfig) handlerChirps(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respondWithJSON(w, http.StatusOK, chirps)
+}
+
+func (cfg *apiConfig) handlerChirp(w http.ResponseWriter, r *http.Request) {
+	chirpID := r.PathValue("chirpID")
+	fmt.Println(chirpID)
+	uuidID, err := uuid.Parse(chirpID)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "Invalid chirp ID", err)
+		return
+	}
+	resp, err := cfg.db.GetChirp(r.Context(), uuidID)
+	if err != nil {
+		respondWithError(w, http.StatusNotFound, "Couldn't retrieve chirps", err)
+		return
+	}
+
+	chirp := Chirp{
+		ID:        resp.ID,
+		CreatedAt: resp.CreatedAt,
+		UpdatedAt: resp.UpdatedAt,
+		Body:      resp.Body,
+		UserID:    resp.UserID,
+	}
+
+	respondWithJSON(w, http.StatusOK, chirp)
 }
 
 func (cfg *apiConfig) handlerChirpsCreate(w http.ResponseWriter, r *http.Request) {
