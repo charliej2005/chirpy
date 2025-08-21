@@ -20,7 +20,7 @@ type Chirp struct {
 	Body      string    `json:"body"`
 }
 
-func (cfg *apiConfig) handlerChirps(w http.ResponseWriter, r *http.Request) {
+func (cfg *apiConfig) handlerRetrieveChirps(w http.ResponseWriter, r *http.Request) {
 	resp, err := cfg.db.GetAllChirps(r.Context())
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Couldn't retrieve chirps", err)
@@ -42,7 +42,7 @@ func (cfg *apiConfig) handlerChirps(w http.ResponseWriter, r *http.Request) {
 	respondWithJSON(w, http.StatusOK, chirps)
 }
 
-func (cfg *apiConfig) handlerChirp(w http.ResponseWriter, r *http.Request) {
+func (cfg *apiConfig) handlerRetrieveChirp(w http.ResponseWriter, r *http.Request) {
 	chirpID := r.PathValue("chirpID")
 	fmt.Println(chirpID)
 	uuidID, err := uuid.Parse(chirpID)
