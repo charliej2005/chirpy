@@ -113,3 +113,29 @@ func TestGetBearerToken(t *testing.T) {
 		})
 	}
 }
+
+func TestMakeRefreshToken(t *testing.T) {
+	token1, err := MakeRefreshToken()
+	if err != nil {
+		t.Fatalf("MakeRefreshToken failed: %v", err)
+	}
+	if token1 == "" {
+		t.Fatal("MakeRefreshToken returned empty string")
+	}
+
+	token2, err := MakeRefreshToken()
+	if err != nil {
+		t.Fatalf("MakeRefreshToken failed on second call: %v", err)
+	}
+	if token2 == "" {
+		t.Fatal("MakeRefreshToken returned empty string on second call")
+	}
+
+	if token1 == token2 {
+		t.Error("MakeRefreshToken returned duplicate tokens")
+	}
+
+	if len(token1) != 64 {
+		t.Errorf("MakeRefreshToken returned token of wrong length: got %d, want 64", len(token1))
+	}
+}
