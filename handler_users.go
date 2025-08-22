@@ -60,17 +60,13 @@ func (cfg *apiConfig) handlerUsersCreate(w http.ResponseWriter, r *http.Request)
 
 func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
-		Password         string `json:"password"`
-		Email            string `json:"email"`
-		ExpiresInSeconds int    `json:"expires_in_seconds"`
+		Password string `json:"password"`
+		Email    string `json:"email"`
 	}
 	type response struct {
-		ID           string    `json:"id"`
-		CreatedAt    time.Time `json:"created_at"`
-		UpdatedAt    time.Time `json:"updated_at"`
-		Email        string    `json:"email"`
-		Token        string    `json:"token"`
-		RefreshToken string    `json:"refresh_token"`
+		User
+		Token        string `json:"token"`
+		RefreshToken string `json:"refresh_token"`
 	}
 
 	decoder := json.NewDecoder(r.Body)
@@ -79,11 +75,6 @@ func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Couldn't decode parameters", err)
 		return
-	}
-
-	expTime := params.ExpiresInSeconds
-	if expTime == 0 || expTime > int(time.Hour) {
-		expTime = int(time.Hour)
 	}
 
 	user, err := cfg.db.GetUser(r.Context(), params.Email)
@@ -98,13 +89,12 @@ func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := auth.MakeJWT(user.ID, cfg.secret, time.Duration(expTime))
+	token, err := auth.MakeJWT(user.ID, cfg.secret, time.Hour)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Unable to create JWT", err)
 		return
 	}
 
-	// Ideally this func would handle creating the entry, too
 	rToken, err := auth.MakeRefreshToken()
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Unable to create refresh token", err)
@@ -117,18 +107,20 @@ func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 		ExpiresAt: time.Now().Add(time.Hour),
 	}
 
-	refreshToken, err := cfg.db.CreateRefreshToken(r.Context(), rParams)
+	_, err = cfg.db.CreateRefreshToken(r.Context(), rParams)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Unable to create refresh token", err)
 		return
 	}
 
 	respondWithJSON(w, http.StatusOK, response{
-		ID:           user.ID.String(),
-		CreatedAt:    user.CreatedAt,
-		UpdatedAt:    user.UpdatedAt,
-		Email:        user.Email,
+		User: User{
+			ID:        user.ID,
+			CreatedAt: user.CreatedAt,
+			UpdatedAt: user.UpdatedAt,
+			Email:     user.Email,
+		},
 		Token:        token,
-		RefreshToken: refreshToken.Token,
+		RefreshToken: rToken,
 	})
 }
