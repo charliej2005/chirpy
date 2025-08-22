@@ -21,6 +21,8 @@ type Chirp struct {
 }
 
 func (cfg *apiConfig) handlerRetrieveChirps(w http.ResponseWriter, r *http.Request) {
+	authorID := r.URL.Query().Get("author_id")
+
 	resp, err := cfg.db.GetAllChirps(r.Context())
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Couldn't retrieve chirps", err)
@@ -36,7 +38,9 @@ func (cfg *apiConfig) handlerRetrieveChirps(w http.ResponseWriter, r *http.Reque
 			Body:      entry.Body,
 			UserID:    entry.UserID,
 		}
-		chirps = append(chirps, chirp)
+		if authorID == "" || chirp.UserID.String() == authorID {
+			chirps = append(chirps, chirp)
+		}
 	}
 
 	respondWithJSON(w, http.StatusOK, chirps)
