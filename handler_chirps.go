@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -45,7 +44,6 @@ func (cfg *apiConfig) handlerRetrieveChirps(w http.ResponseWriter, r *http.Reque
 
 func (cfg *apiConfig) handlerRetrieveChirp(w http.ResponseWriter, r *http.Request) {
 	chirpID := r.PathValue("chirpID")
-	fmt.Println(chirpID)
 	uuidID, err := uuid.Parse(chirpID)
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, "Invalid chirp ID", err)
@@ -142,4 +140,42 @@ func getCleanedBody(body string, badWords map[string]struct{}) string {
 	}
 	cleaned := strings.Join(words, " ")
 	return cleaned
+}
+
+func (cfg *apiConfig) handlerChirpsDelete(w http.ResponseWriter, r *http.Request) {
+	chirpID := r.PathValue("chirpID")
+	uuidID, err := uuid.Parse(chirpID)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "Invalid chirp ID", err)
+		return
+	}
+
+	chirp, err := cfg.db.GetChirp(r.Context(), uuidID)
+	if err != nil {
+		respondWithError(w, http.StatusNotFound, "Chirp not found", err)
+		return
+	}
+
+	token, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "Invalid refresh token", err)
+		return
+	}
+
+	userID, err := auth.ValidateJWT(token, cfg.secret)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "Invalid access token", err)
+		return
+	}
+
+	_, err = cfg.db.DeleteChirp(r.Context(), database.DeleteChirpParams{
+		ID:     chirp.ID,
+		UserID: userID,
+	})
+	if err != nil {
+		respondWithError(w, http.StatusForbidden, "Delete not permitted", err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
