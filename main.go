@@ -38,6 +38,7 @@ func main() {
 	mux.Handle("/app/", fileSever)
 
 	mux.HandleFunc("POST /api/users", apiCfg.handlerUsersCreate)
+	mux.HandleFunc("PUT /api/users", apiCfg.handlerUsersUpdate)
 	mux.HandleFunc("POST /api/login", apiCfg.handlerLogin)
 
 	mux.HandleFunc("GET /api/chirps", apiCfg.handlerRetrieveChirps)
