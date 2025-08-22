@@ -20,7 +20,7 @@ func (cfg *apiConfig) handlerRefresh(w http.ResponseWriter, r *http.Request) {
 
 	user, err := cfg.db.GetUserFromRefreshToken(r.Context(), token)
 	if err != nil {
-		respondWithError(w, http.StatusNotFound, "User not found", err)
+		respondWithError(w, http.StatusUnauthorized, "User not found", err)
 		return
 	}
 
@@ -37,4 +37,20 @@ func (cfg *apiConfig) handlerRefresh(w http.ResponseWriter, r *http.Request) {
 	respondWithJSON(w, http.StatusOK, response{
 		Token: accessToken,
 	})
+}
+
+func (cfg *apiConfig) handlerRevoke(w http.ResponseWriter, r *http.Request) {
+	token, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "Invalid refresh token", err)
+		return
+	}
+
+	_, err = cfg.db.RevokeRefreshToken(r.Context(), token)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "Invalid refresh token", err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
