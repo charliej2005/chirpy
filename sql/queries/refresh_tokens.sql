@@ -5,6 +5,12 @@ VALUES(
     NOW(),
     NOW(),
     $2,
-    NOW() + $3 -- expires_in
+    $3
 )
 RETURNING *;
+
+-- name: GetUserFromRefreshToken :one
+SELECT users.* FROM users
+INNER JOIN refresh_tokens
+    ON refresh_tokens.user_id = users.id
+WHERE refresh_tokens.token = $1;

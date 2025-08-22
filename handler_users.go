@@ -112,9 +112,9 @@ func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	rParams := database.CreateRefreshTokenParams{
-		Token:   rToken,
-		UserID:  user.ID,
-		Column3: expTime,
+		Token:     rToken,
+		UserID:    user.ID,
+		ExpiresAt: time.Now().Add(time.Hour),
 	}
 
 	refreshToken, err := cfg.db.CreateRefreshToken(r.Context(), rParams)
